@@ -20,12 +20,27 @@ export default function VoiceButton() {
   const handleClick = async () => {
     if (typeof window === "undefined") return;
 
-    // 1️⃣ Get correct SpeechRecognition engine
+    // 1️⃣ Get correct SpeechRecognition engine (prefer standard name)
     const SpeechRecognition =
-      window.webkitSpeechRecognition || window.SpeechRecognition;
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    // Detect common unsupported environments (notably iOS Safari)
+    const ua = navigator.userAgent || "";
+    const isiOS = /iP(ad|hone|od)/i.test(ua);
 
     if (!SpeechRecognition) {
-      alert("Voice input is not supported on this browser.");
+      if (isiOS) {
+        alert(
+          "Speech recognition is not supported on iOS browsers (Safari/Chrome on iOS). Try Chrome on Android or desktop Chrome/Edge."
+        );
+      } else if (!window.isSecureContext) {
+        alert(
+          "Speech recognition requires HTTPS. Please use a secure (HTTPS) site."
+        );
+      } else {
+        alert("Voice input is not supported on this browser.");
+      }
       return;
     }
 
@@ -66,14 +81,23 @@ export default function VoiceButton() {
 
     // 4️⃣ Error handling
     recognition.onerror = (event: any) => {
-      console.error("Speech Error:", event.error);
+      console.error("Speech Error:", event);
 
-      if (event.error === "not-allowed") {
-        alert("Please allow microphone access in browser settings.");
-      }
+      const err = event?.error || "unknown";
+      const message = event?.message || "";
 
-      if (event.error === "network") {
-        alert("SpeechRecognition requires HTTPS (Vercel is fine).");
+      if (err === "not-allowed") {
+        alert(
+          "Microphone access was blocked. Please allow mic permission in browser settings."
+        );
+      } else if (err === "network") {
+        alert(
+          "SpeechRecognition requires HTTPS or a working network connection."
+        );
+      } else {
+        alert(
+          "Speech recognition error: " + err + (message ? " — " + message : "")
+        );
       }
 
       setListening(false);
