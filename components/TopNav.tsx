@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Github, Linkedin } from "lucide-react";
+import { SiLeetcode } from "react-icons/si";
 
 export default function TopNav() {
   const [open, setOpen] = useState(false);
@@ -20,7 +21,9 @@ export default function TopNav() {
           className="cursor-pointer flex items-center gap-3"
           onClick={() => setOpen(true)}
         >
-          <span className="font-semibold text-white text-sm"><a href="/">Kishan</a></span>
+          <span className="font-semibold text-white text-sm">
+            <a href="/">Kishan</a>
+          </span>
         </div>
 
         {/* RIGHT — Social Icons */}
@@ -28,10 +31,15 @@ export default function TopNav() {
           <a href="https://github.com/kishanghosh090" target="_blank">
             <Github className="hover:text-gray-300 transition" size={20} />
           </a>
-          <a href="https://www.linkedin.com/in/kishan-rana-ghosh-8b95832b9/" target="_blank">
+          <a
+            href="https://www.linkedin.com/in/kishan-rana-ghosh-8b95832b9/"
+            target="_blank"
+          >
             <Linkedin className="hover:text-gray-300 transition" size={20} />
           </a>
-       
+          <a href="https://leetcode.com/u/KishanRanaGhosh2005" target="_blank">
+            <SiLeetcode className="hover:text-gray-300 transition" size={20} />
+          </a>
         </div>
       </div>
     </>
