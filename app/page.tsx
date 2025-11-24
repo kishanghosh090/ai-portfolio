@@ -1,9 +1,9 @@
 import Hero from "@/components/Hero";
 import Section from "@/components/Section";
-import ProjectCard from "@/components/ProjectCard";
-import { featuredProjects } from "@/lib/projects";
 import TimelineItem from "@/components/TimelineItem";
 import { timeline } from "@/lib/timeline";
+import { projects } from "@/data/projects";
+import ProjectCategory from "@/components/ProjectCategory";
 
 export default function Home() {
   return (
@@ -20,23 +20,19 @@ export default function Home() {
         </p>
       </Section>
 
-      <Section
-        id="projects"
-        title="Highlighted projects"
-        eyebrow="Things I've shipped"
-      >
-        <div className="grid md:grid-cols-2 gap-5">
-          {featuredProjects.map((p) => (
-            <ProjectCard key={p.slug} project={p} />
-          ))}
-        </div>
+      <Section id="projects" title="My Projects" eyebrow="Things I've shipped">
+        {Object.entries(projects).map(([category, items]) => (
+          <ProjectCategory
+            key={category}
+            title={`${
+              category.charAt(0).toUpperCase() + category.slice(1)
+            } Projects`}
+            items={items}
+          />
+        ))}
       </Section>
 
-      <Section
-        id="timeline"
-        title="Journey so far"
-        eyebrow="Learning timeline"
-      >
+      <Section id="timeline" title="Journey so far" eyebrow="Learning timeline">
         <div className="space-y-4">
           {timeline.map((item) => (
             <TimelineItem key={item.title} item={item} />

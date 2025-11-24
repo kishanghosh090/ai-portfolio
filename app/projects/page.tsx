@@ -6,9 +6,14 @@ export default function ProjectsPage() {
     <main className="px-6 py-10 max-w-6xl mx-auto">
       <h1 className="text-4xl font-bold mb-8">My Projects</h1>
 
-      <ProjectCategory title="Web Projects" items={projects.web} />
-      <ProjectCategory title="iOS Projects" items={projects.ios} />
-      <ProjectCategory title="Android Projects" items={projects.android} />
+
+      {Object.entries(projects).map(([category, items]) => (
+        <ProjectCategory
+          key={category}
+          title={`${category.charAt(0).toUpperCase() + category.slice(1)} Projects`}
+          items={items}
+        />
+      ))}
     </main>
   );
 }
