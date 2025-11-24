@@ -62,3 +62,21 @@ body {
 .animate-siri-ring {
   animation: siri-ring 1.5s ease-out infinite;
 }
+/* @keyframes liquid {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  35% {
+    transform: translate(-20px, 15px) scale(1.05);
+  }
+  70% {
+    transform: translate(10px, -15px) scale(1.03);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-liquid {
+  animation: liquid 7s ease-in-out infinite;
+} */

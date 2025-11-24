@@ -1,15 +1,14 @@
-import Section from "@/components/Section";
-import ProjectCard from "@/components/ProjectCard";
-import { allProjects } from "@/lib/projects";
+import ProjectCategory from "@/components/ProjectCategory";
+import { projects } from "@/data/projects";
 
 export default function ProjectsPage() {
   return (
-    <Section title="All projects" eyebrow="Work">
-      <div className="grid md:grid-cols-2 gap-5">
-        {allProjects.map((p) => (
-          <ProjectCard key={p.slug} project={p} />
-        ))}
-      </div>
-    </Section>
+    <main className="px-6 py-10 max-w-6xl mx-auto">
+      <h1 className="text-4xl font-bold mb-8">My Projects</h1>
+
+      <ProjectCategory title="Web Projects" items={projects.web} />
+      <ProjectCategory title="iOS Projects" items={projects.ios} />
+      <ProjectCategory title="Android Projects" items={projects.android} />
+    </main>
   );
 }

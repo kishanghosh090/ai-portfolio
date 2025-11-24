@@ -7,7 +7,7 @@ import { timeline } from "@/lib/timeline";
 
 export default function Home() {
   return (
-    <>
+    <div className="">
       <Hero />
 
       <Section id="about" title="About me" eyebrow="Intro">
@@ -43,6 +43,6 @@ export default function Home() {
           ))}
         </div>
       </Section>
-    </>
+    </div>
   );
 }

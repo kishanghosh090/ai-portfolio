@@ -1,5 +1,13 @@
 export const skills = {
-  languages: ["C", "C++", "Kotlin", "Swift", "JavaScript", "TypeScript"],
+  languages: [
+    "C",
+    "C++",
+    "Kotlin",
+    "Swift",
+    "JavaScript",
+    "TypeScript",
+    "Dart",
+  ],
   web: [
     "Next.js",
     "React",
@@ -12,8 +20,8 @@ export const skills = {
   mobile: [
     "Android (Jetpack Compose)",
     "iOS (Swift / SwiftUI)",
-    "React Native",
+    "Flutter (Learing)",
   ],
-  data: ["Python basics", "Data Science foundations (IITM)", "SQL (basics)"],
-  tools: ["Git", "Linux (Arch / macOS)", "Nginx", "PM2", "Firebase"],
+  // data: ["Python basics", "Data Science foundations (IITM)", "SQL (basics)"],
+  tools: ["Git", "Linux (Arch / macOS)", "Nginx", "PM2", "Postman"],
 };
