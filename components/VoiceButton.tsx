@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { askGemini } from "@/lib/gemini";
 import SiriMicButton from "./SiriMicButton";
+import SiriFluid from "./SiriFluid";
 
 declare global {
   interface Window {
@@ -145,12 +146,12 @@ export default function VoiceButton() {
           } else if ("text" in ai && typeof (ai as any).text === "string") {
             // Only access .text after checking it exists on the response
             speakText((ai as any).text);
-            alert((ai as any).text);
+            // alert((ai as any).text);
           } else {
             // Fallback for unexpected shapes
             const msg = typeof ai === "string" ? ai : JSON.stringify(ai);
             speakText(msg);
-            alert(msg);
+            // alert(msg);
           }
         } else {
           alert("Unexpected AI response.");
@@ -193,6 +194,7 @@ export default function VoiceButton() {
           handleClick();
         }}
       />
+      {listening && (<SiriFluid active={listening}/>)}
 
       {errorMsg ? (
         <div className="mt-2 text-sm text-red-600">
