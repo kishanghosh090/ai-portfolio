@@ -30,25 +30,42 @@ export default function BottomNav() {
       >
         {items.map((item) => {
           const active = pathname === item.href;
-          const Icon = item.href === "#" ? VoiceButton : item.icon;
+          // For the special AI item (href === "#") render the mic button without a Link
+          if (item.href === "#") {
+            return (
+              <div
+                key={item.href}
+                className={`flex flex-col items-center text-[10px] transition ${
+                  active ? "text-white" : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                <div
+                  className={`p-2 rounded-full transition ${
+                    active ? "bg-white text-black" : ""
+                  }`}
+                >
+                  <VoiceButton />
+                </div>
+              </div>
+            );
+          }
+
+          const Icon = item.icon;
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`
-                flex flex-col items-center text-[10px] transition
-                ${active ? "text-white" : "text-zinc-400 hover:text-zinc-200"}
-              `}
+              className={`flex flex-col items-center text-[10px] transition ${
+                active ? "text-white" : "text-zinc-400 hover:text-zinc-200"
+              }`}
             >
               <div
-                className={`
-                  p-2 rounded-full transition
-                  ${active ? "bg-white text-black" : ""}
-                `}
+                className={`p-2 rounded-full transition ${
+                  active ? "bg-white text-black" : ""
+                }`}
               >
-                {item.href === "/ai" ? <VoiceButton /> : <Icon size={18} />}
-                {/* <Icon size={18} /> */}
+                <Icon size={18} />
               </div>
             </Link>
           );
