@@ -2,191 +2,133 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { askGemini } from "@/lib/gemini";
 import SiriMicButton from "./SiriMicButton";
 import SiriFluid from "./SiriFluid";
-import { askGemini } from "@/lib/gemini";
 
 declare global {
   interface Window {
-    webkitSpeechRecognition: any;
     SpeechRecognition: any;
+    webkitSpeechRecognition: any;
   }
 }
 
 export default function VoiceButton() {
   const [listening, setListening] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
   const router = useRouter();
 
-  // Detect mobile browsers where Web Speech API is BLOCKED
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(
-    typeof navigator !== "undefined" ? navigator.userAgent : ""
-  );
-
-  // -------------------------------
-  // 🔊 Text-to-Speech
-  // -------------------------------
-  function speak(text: string) {
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "en-IN";
-    utter.rate = 1;
-    utter.pitch = 1;
-    speechSynthesis.speak(utter);
-  }
-
-  // -------------------------------
-  // 🎤 DESKTOP SpeechRecognition
-  // -------------------------------
-  const startWebSpeech = async () => {
+  const startSpeech = async () => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      setError("Speech recognition not supported in this browser.");
+      alert("Speech recognition not supported in this browser.");
       return;
     }
 
-    // Ask for mic permission first
+    // Mic permission
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      setError("Microphone permission denied.");
+      alert("Please allow microphone permission.");
       return;
     }
 
-    // Clear old instance
+    // Clear previous instance
     if (recognitionRef.current) {
       try {
-        recognitionRef.current.abort();
+        recognitionRef.current.stop();
       } catch {}
-    }
-
-    const rec = new SpeechRecognition();
-    recognitionRef.current = rec;
-
-    rec.lang = "en-IN";
-    rec.interimResults = false;
-    rec.continuous = false;
-
-    rec.onstart = () => setListening(true);
-    rec.onend = () => {
-      setListening(false);
       recognitionRef.current = null;
-    };
+    }
 
-    rec.onerror = (e: any) => {
-      console.error(e);
-      setError("Speech recognition error: " + e.error);
-      setListening(false);
-    };
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
 
-    rec.onresult = async (e: any) => {
-      const text = e.results[0][0].transcript;
-      handleTranscript(text);
-    };
+    recognition.lang = "en-IN";
+    recognition.continuous = true;          // ANDROID-FRIENDLY
+    recognition.interimResults = true;      // ANDROID-FRIENDLY
 
-    try {
-      rec.start();
-    } catch {}
-  };
+    let finalTranscript = "";
 
-  // -------------------------------
-  // 📱 MOBILE fallback recording
-  // -------------------------------
-  // Mobile fallback recorder (fixed)
-
-  const startRecordingFallback = async (duration = 4000) => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      const chunks: BlobPart[] = [];
-
-      recorder.ondataavailable = (e) => chunks.push(e.data);
-      recorder.start();
+    recognition.onstart = () => {
       setListening(true);
+      setErrorMsg(null);
+    };
 
-      // Stop after duration
-      setTimeout(() => recorder.stop(), duration);
+    recognition.onerror = (e: any) => {
+      console.log("SR error:", e);
 
-      recorder.onstop = async () => {
-        setListening(false);
-
-        const blob = new Blob(chunks, { type: recorder.mimeType });
-        const form = new FormData();
-        form.append("audio", blob, "voice.webm");
-        form.forEach((v) => {
-          console.log(v);
-          
-        })
-        const res = await fetch("/api/stt", { method: "POST", body: form });
-        const json = await res.json();
-
-        if (!json.text) {
-          setError("No speech detected.");
-          return;
-        }
-
-        // Pass to your AI
-        handleTranscript(json.text);
-      };
-    } catch (err: any) {
-      console.error("Fallback recording failed:", err);
-      setError("Recording failed: " + err.message);
-      setListening(false);
-    }
-  };
-
-  // -------------------------------
-  // 🤖 Send voice text to Gemini
-  // -------------------------------
-  const handleTranscript = async (text: string) => {
-    try {
-      const raw = await askGemini(text);
-      const ai = typeof raw === "string" ? JSON.parse(raw) : raw;
-
-      if (ai.type === "navigate") {
-        speak("Opening " + ai.route.replace("/", ""));
-        router.push(ai.route);
-      } else if (ai.text) {
-        speak(ai.text);
+      if (e.error === "no-speech") {
+        setErrorMsg("No speech detected. Try again.");
+      } else if (e.error === "not-allowed") {
+        setErrorMsg("Speech permission blocked.");
+      } else if (e.error === "network") {
+        setErrorMsg("Speech service unreachable. Try again.");
       } else {
-        speak("I did not understand that.");
+        setErrorMsg("Speech error: " + e.error);
       }
-    } catch (err) {
-      console.error(err);
-      setError("AI error, please try again.");
-    }
-  };
 
-  // -------------------------------
-  // 🎤 Main click handler
-  // -------------------------------
-  const handleClick = () => {
-    setError(null);
+      setListening(false);
+    };
 
-    if (isMobile) {
-      // Mobile → backend STT fallback
-      startRecordingFallback();
-      return;
-    }
+    recognition.onresult = (e: any) => {
+      let text = "";
+      for (let i = 0; i < e.results.length; i++) {
+        text += e.results[i][0].transcript + " ";
+      }
+      finalTranscript = text.trim();
+    };
 
-    // Desktop → native speech API
-    startWebSpeech();
+    recognition.onend = async () => {
+      setListening(false);
+
+      if (!finalTranscript) {
+        setErrorMsg("No speech detected.");
+        return;
+      }
+
+      // SEND TO GEMINI
+      try {
+        const ai = await askGemini(finalTranscript);
+
+        if (ai.type === "navigate") {
+          router.push(ai.route);
+        } else {
+          alert(ai.text);
+        }
+      } catch {
+        alert("AI error. Try again.");
+      }
+    };
+
+    recognition.start();
+
+    // 🔥 Android fix: force-stop after 5 seconds
+    setTimeout(() => {
+      try {
+        recognition.stop();
+      } catch {}
+    }, 5000);
   };
 
   return (
-    <div className="relative">
-      <SiriMicButton listening={listening} onClick={handleClick} />
+    <div>
+      <SiriMicButton
+        listening={listening}
+        onClick={() => {
+          setErrorMsg(null);
+          startSpeech();
+        }}
+      />
 
-      {listening && <SiriFluid active={true} />}
+      {listening && <SiriFluid active={listening} />}
 
-      {error && (
-        <div className="mt-3 text-red-400 text-sm">
-          {error}
-          <button className="ml-3 underline" onClick={() => setError(null)}>
-            Dismiss
-          </button>
+      {errorMsg && (
+        <div className="text-red-500 mt-2 text-sm">
+          {errorMsg}
         </div>
       )}
     </div>
