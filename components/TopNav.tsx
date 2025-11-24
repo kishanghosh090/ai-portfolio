@@ -1,9 +1,6 @@
 "use client";
-
-import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { Github, Linkedin, Instagram } from "lucide-react";
+import { Github, Linkedin } from "lucide-react";
 
 export default function TopNav() {
   const [open, setOpen] = useState(false);
@@ -23,20 +20,18 @@ export default function TopNav() {
           className="cursor-pointer flex items-center gap-3"
           onClick={() => setOpen(true)}
         >
-          <span className="font-semibold text-white text-sm">Kishan</span>
+          <span className="font-semibold text-white text-sm"><a href="/">Kishan</a></span>
         </div>
 
         {/* RIGHT — Social Icons */}
         <div className="flex gap-4 text-white">
-          <a href="https://github.com/yourname" target="_blank">
+          <a href="https://github.com/kishanghosh090" target="_blank">
             <Github className="hover:text-gray-300 transition" size={20} />
           </a>
-          <a href="https://linkedin.com/in/yourname" target="_blank">
+          <a href="https://www.linkedin.com/in/kishan-rana-ghosh-8b95832b9/" target="_blank">
             <Linkedin className="hover:text-gray-300 transition" size={20} />
           </a>
-          <a href="https://instagram.com/yourname" target="_blank">
-            <Instagram className="hover:text-gray-300 transition" size={20} />
-          </a>
+       
         </div>
       </div>
     </>
