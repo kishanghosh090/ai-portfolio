@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import SiriMicButton from "./SiriMicButton";
 import SiriFluid from "./SiriFluid";
 import { askGemini } from "@/lib/gemini";
+// @ts-ignore: No TypeScript types are available for 'opus-media-recorder'
+import OpusMediaRecorder from "opus-media-recorder";
 
 declare global {
   interface Window {
@@ -95,61 +97,55 @@ export default function VoiceButton() {
   // 📱 MOBILE fallback recording
   // -------------------------------
   // Mobile fallback recorder (fixed)
-  const startRecordingFallback = async () => {
-    setError(null);
+  
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
-      });
 
-      const recorder = new MediaRecorder(stream, {
-        mimeType: "audio/mp4", // 🔥 FIX 1 — works on Android/iOS
-      });
 
-      const chunks: BlobPart[] = [];
+async function startRecordingFallback() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data);
-      };
+    const options = {
+      mimeType: "audio/ogg",
+      audioBitsPerSecond: 48000,
+      wasmPath: "/opus/opus-media-recorder.wasm",
+      encoderPath: "/opus/worker.js",
+    };
 
-      recorder.start(200); // 🔥 FIX 2 — give browser time
+    const recorder = new OpusMediaRecorder(stream, options);
 
-      setListening(true);
+    const chunks: BlobPart[] = [];
 
-      // Record 4 seconds
-      await new Promise((res) => setTimeout(res, 4000));
-      recorder.stop();
+    recorder.ondataavailable = (e: { data: BlobPart; }) => chunks.push(e.data);
 
-      await new Promise((res) => (recorder.onstop = res));
-      setListening(false);
+    recorder.start();
+    setListening(true);
 
-      const blob = new Blob(chunks, { type: "audio/mp4" }); // 🔥 FIX 3
+    await new Promise((res) => setTimeout(res, 4000));
+    recorder.stop();
 
-      const formData = new FormData();
-      formData.append("audio", blob, "voice.mp4");
-      console.log(formData);
-      
+    await new Promise((res) => (recorder.onstop = res));
+    setListening(false);
 
-      const res = await fetch("/api/ask", { method: "POST", body: formData });
+    const blob = new Blob(chunks, { type: "audio/ogg" });
 
-      const json = await res.json();
+    const form = new FormData();
+    form.append("audio", blob, "voice.ogg");
 
-      if (!json?.text || json.text.trim() === "") {
-        setError("No speech detected — try again.");
-        return;
-      }
+    const res = await fetch("/api/stt", { method: "POST", body: form });
+    const json = await res.json();
 
-      handleTranscript(json.text);
-    } catch (err) {
-      console.error(err);
-      setError("Recording failed: " + (err as any).message);
-      setListening(false);
+    if (!json?.text) {
+      setError("No speech detected.");
+      return;
     }
-  };
+
+    handleTranscript(json.text);
+  } catch (e) {
+    console.error("Android recorder error:", e);
+    setError("Recording failed.");
+  }
+}
 
   // -------------------------------
   // 🤖 Send voice text to Gemini
