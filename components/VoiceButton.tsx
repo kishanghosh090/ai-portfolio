@@ -115,7 +115,10 @@ export default function VoiceButton() {
         const blob = new Blob(chunks, { type: recorder.mimeType });
         const form = new FormData();
         form.append("audio", blob, "voice.webm");
-
+        form.forEach((v) => {
+          console.log(v);
+          
+        })
         const res = await fetch("/api/stt", { method: "POST", body: form });
         const json = await res.json();
 
