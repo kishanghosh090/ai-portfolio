@@ -2,10 +2,7 @@ import VoiceButton from "./VoiceButton";
 
 export default function Hero() {
   return (
-    <div className="relative overflow-hidden border-b border-white/5 flex flex-col justify-start mt-10">
-      {/* Background gradient blob */}
-      
-
+    <div className="relative overflow-hidden border-b border-white/5 flex flex-col justify-start mt-10">  
       <div className="relative max-w-5xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)] gap-10 items-center ">
         <div className="space-y-5">
           <p className="text-xs uppercase tracking-[0.3em] text-violet-200/80">

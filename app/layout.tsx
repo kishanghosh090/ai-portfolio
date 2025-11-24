@@ -18,9 +18,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className="bg-[#050509] text-zinc-100 overflow-x-hidden">
         <SmoothScroll />
-
         <div className="min-h-screen flex flex-col overflow-x-hidden ">
-          {/* <Navbar /> */}
           <TopNav />
           <main className="flex-1">{children}</main>
           <BottomNav />
