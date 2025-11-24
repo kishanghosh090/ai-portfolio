@@ -124,13 +124,12 @@ export default function VoiceButton() {
       const transcript = event.results[0][0].transcript;
       console.log("User said:", transcript);
 
-        try {
+      try {
         let aiRes = await askGemini(transcript);
         // console.log("Gemini response:", typeof(ai));
         // askGemini may return a parsed object or a JSON string depending on implementation,
         // so handle both cases safely.
         const ai = typeof aiRes === "string" ? JSON.parse(aiRes) : aiRes;
-
 
         // Safely handle navigate responses and textual responses using type guards
         if (ai && typeof ai === "object") {
@@ -175,6 +174,80 @@ export default function VoiceButton() {
     }
   };
 
+  // Fallback: record audio for a few seconds and send to server STT (works on mobile)
+  const startRecordingFallback = async (durationMs = 4000) => {
+    setErrorMsg(null);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: BlobPart[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.start();
+      setListening(true);
+
+      // stop after durationMs
+      await new Promise((resolve) => setTimeout(resolve, durationMs));
+      recorder.stop();
+
+      await new Promise((resolve) => (recorder.onstop = resolve));
+      setListening(false);
+
+      const blob = new Blob(chunks, { type: "audio/webm" });
+      const form = new FormData();
+      form.append("audio", blob, "rec.webm");
+
+      const res = await fetch("/api/stt", { method: "POST", body: form });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        setErrorMsg("Transcription failed: " + (txt || res.statusText));
+        return;
+      }
+
+      const json = await res.json();
+      const transcript = json?.text ?? "";
+      if (!transcript) {
+        setErrorMsg("No transcript returned from server.");
+        return;
+      }
+
+      // Continue with the normal AI flow using the transcript
+      try {
+        const aiRes = await askGemini(transcript);
+        const ai = typeof aiRes === "string" ? JSON.parse(aiRes) : aiRes;
+
+        if (ai && typeof ai === "object") {
+          if (
+            "type" in ai &&
+            String((ai as any).type).toLowerCase() === "navigate" &&
+            "route" in ai &&
+            typeof (ai as any).route === "string"
+          ) {
+            const route = (ai as any).route.replace(/^\//, "");
+            speakText("Opening " + route);
+            router.push((ai as any).route);
+          } else if ("text" in ai && typeof (ai as any).text === "string") {
+            speakText((ai as any).text);
+          } else {
+            const msg = typeof ai === "string" ? ai : JSON.stringify(ai);
+            speakText(msg);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        setErrorMsg("AI error after transcription.");
+      }
+    } catch (err: any) {
+      console.error("Recording fallback error", err);
+      setErrorMsg("Recording failed: " + String(err?.message ?? err));
+      setListening(false);
+    }
+  };
+
   // 🔊 Speech output function
   function speakText(text: string) {
     const speech = new SpeechSynthesisUtterance(text);
@@ -194,12 +267,26 @@ export default function VoiceButton() {
           handleClick();
         }}
       />
-      {listening && (<SiriFluid active={listening}/>)}
+      {listening && <SiriFluid active={listening} />}
 
       {errorMsg ? (
         <div className="mt-2 text-sm text-red-600">
           <div>{errorMsg}</div>
           <div className="mt-1 flex gap-3">
+            <button
+              className="underline"
+              onClick={() => {
+                // Mobile fallback: record a short audio clip and transcribe server-side
+                setErrorMsg(null);
+                try {
+                  void startRecordingFallback(4000);
+                } catch (e) {
+                  console.error("Record fallback failed:", e);
+                }
+              }}
+            >
+              Record
+            </button>
             <button
               className="underline"
               onClick={() => {
