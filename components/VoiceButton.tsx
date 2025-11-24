@@ -94,42 +94,58 @@ export default function VoiceButton() {
   // -------------------------------
   // 📱 MOBILE fallback recording
   // -------------------------------
+  // Mobile fallback recorder (fixed)
   const startRecordingFallback = async () => {
     setError(null);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const rec = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
+
+      const recorder = new MediaRecorder(stream, {
+        mimeType: "audio/mp4", // 🔥 FIX 1 — works on Android/iOS
+      });
+
       const chunks: BlobPart[] = [];
 
-      rec.ondataavailable = (e) => chunks.push(e.data);
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
 
-      rec.start();
+      recorder.start(200); // 🔥 FIX 2 — give browser time
+
       setListening(true);
 
-      // Record for 4 seconds
+      // Record 4 seconds
       await new Promise((res) => setTimeout(res, 4000));
-      rec.stop();
+      recorder.stop();
 
-      await new Promise((res) => (rec.onstop = res));
+      await new Promise((res) => (recorder.onstop = res));
       setListening(false);
 
-      const audioBlob = new Blob(chunks, { type: "audio/webm" });
-      const fd = new FormData();
-      fd.append("audio", audioBlob, "voice.webm");
+      const blob = new Blob(chunks, { type: "audio/mp4" }); // 🔥 FIX 3
 
-      const res = await fetch("/api/stt", { method: "POST", body: fd });
+      const formData = new FormData();
+      formData.append("audio", blob, "voice.mp4");
+
+      const res = await fetch("/api/stt", { method: "POST", body: formData });
+
       const json = await res.json();
 
-      if (!json?.text) {
-        setError("No speech detected.");
+      if (!json?.text || json.text.trim() === "") {
+        setError("No speech detected — try again.");
         return;
       }
 
       handleTranscript(json.text);
     } catch (err) {
-      setError("Recording failed.");
       console.error(err);
+      setError("Recording failed: " + (err as any).message);
+      setListening(false);
     }
   };
 
@@ -139,8 +155,7 @@ export default function VoiceButton() {
   const handleTranscript = async (text: string) => {
     try {
       const raw = await askGemini(text);
-      const ai =
-        typeof raw === "string" ? JSON.parse(raw) : raw;
+      const ai = typeof raw === "string" ? JSON.parse(raw) : raw;
 
       if (ai.type === "navigate") {
         speak("Opening " + ai.route.replace("/", ""));
@@ -181,10 +196,7 @@ export default function VoiceButton() {
       {error && (
         <div className="mt-3 text-red-400 text-sm">
           {error}
-          <button
-            className="ml-3 underline"
-            onClick={() => setError(null)}
-          >
+          <button className="ml-3 underline" onClick={() => setError(null)}>
             Dismiss
           </button>
         </div>
