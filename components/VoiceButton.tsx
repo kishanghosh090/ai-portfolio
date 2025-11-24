@@ -131,6 +131,8 @@ export default function VoiceButton() {
 
       const formData = new FormData();
       formData.append("audio", blob, "voice.mp4");
+      console.log(formData);
+      
 
       const res = await fetch("/api/ask", { method: "POST", body: formData });
 
