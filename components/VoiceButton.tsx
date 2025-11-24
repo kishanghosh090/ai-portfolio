@@ -14,6 +14,7 @@ declare global {
 
 export default function VoiceButton() {
   const [listening, setListening] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
   const router = useRouter();
 
@@ -44,6 +45,17 @@ export default function VoiceButton() {
       return;
     }
 
+    // Clear previous errors and 2️⃣ Request mic permission BEFORE recognition
+    setErrorMsg(null);
+
+    // Quick offline check — the browser-level speech service requires network/HTTPS
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setErrorMsg(
+        "Offline: check your internet connection and click the mic to retry."
+      );
+      return;
+    }
+
     // 2️⃣ Request mic permission BEFORE recognition
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -71,6 +83,7 @@ export default function VoiceButton() {
     recognition.onstart = () => {
       console.log("🎤 Mic started");
       setListening(true);
+      setErrorMsg(null);
     };
 
     recognition.onend = () => {
@@ -87,20 +100,22 @@ export default function VoiceButton() {
       const message = event?.message || "";
 
       if (err === "not-allowed") {
-        alert(
+        setErrorMsg(
           "Microphone access was blocked. Please allow mic permission in browser settings."
         );
       } else if (err === "network") {
-        alert(
-          "SpeechRecognition requires HTTPS or a working network connection."
+        // Don't auto-retry; require user gesture. Show clear inline guidance instead.
+        setErrorMsg(
+          "Speech service unreachable — check your internet connection, disable VPN/proxy, or try another browser. Click the mic to retry."
         );
       } else {
-        alert(
+        setErrorMsg(
           "Speech recognition error: " + err + (message ? " — " + message : "")
         );
       }
 
       setListening(false);
+      recognitionRef.current = null;
     };
 
     // 5️⃣ Speech result handler
@@ -149,12 +164,45 @@ export default function VoiceButton() {
   }
 
   return (
-    <SiriMicButton
-      listening={listening}
-      onClick={() => {
-        // Start/stop recognition via the handler. Do NOT navigate away — navigation interrupts the mic.
-        handleClick();
-      }}
-    />
+    <div>
+      <SiriMicButton
+        listening={listening}
+        onClick={() => {
+          // Start/stop recognition via the handler. Do NOT navigate away — navigation interrupts the mic.
+          handleClick();
+        }}
+      />
+
+      {errorMsg ? (
+        <div className="mt-2 text-sm text-red-600">
+          <div>{errorMsg}</div>
+          <div className="mt-1 flex gap-3">
+            <button
+              className="underline"
+              onClick={() => {
+                // Manual retry: this click is a user gesture so we can re-run recognition.
+                setErrorMsg(null);
+                try {
+                  void handleClick();
+                } catch (e) {
+                  console.error("Retry failed:", e);
+                }
+              }}
+            >
+              Retry
+            </button>
+
+            <button
+              className="underline"
+              onClick={() => {
+                setErrorMsg(null);
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
