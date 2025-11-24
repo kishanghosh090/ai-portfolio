@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
+
+// This route requires the Node.js runtime (Buffer, Blob, FormData usage)
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {

@@ -9,7 +9,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const apiKey = "AIzaSyA_IkCzCYEj3-8YkcITFy18fmA5kVJqbx4";
     if (!apiKey) {
       return NextResponse.json(
         { error: "Server missing API key (set GEMINI_API_KEY)" },
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     }
 
     const openai = new OpenAI({
-      apiKey: "AIzaSyA_IkCzCYEj3-8YkcITFy18fmA5kVJqbx4",
+      apiKey: apiKey,
       baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     });
 
@@ -36,7 +36,6 @@ export async function POST(req: Request) {
     const choice = response.choices?.[0];
     let parsed: any = choice?.message?.content;
     console.log(parsed);
-    
 
     // if (!parsed) {
     //   const raw = String(choice?.message?.content ?? "");
