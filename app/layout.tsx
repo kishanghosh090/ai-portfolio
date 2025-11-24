@@ -4,8 +4,6 @@ import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
 import TopNav from "@/components/TopNav";
 import SmoothScroll from "@/components/SmoothScroll";
-
-
 export const metadata: Metadata = {
   title: "Kishan Rana Ghosh | Portfolio",
   description: "Full-stack, mobile, and AI-focused developer portfolio.",
@@ -21,7 +19,7 @@ export default function RootLayout({
       <body className="bg-[#050509] text-zinc-100 overflow-hidden">
         <SmoothScroll />
 
-        <div className="min-h-screen flex flex-col overflow-x-hidden ">
+        <div  className="min-h-screen flex flex-col overflow-x-hidden ">
           {/* <Navbar /> */}
           <TopNav />
           <main className="flex-1">{children}</main>
