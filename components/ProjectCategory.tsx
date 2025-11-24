@@ -5,7 +5,7 @@ import ProjectCard from "./ProjectCard";
 
 export default function ProjectCategory({ title, items }: any) {
   return (
-    <section className="mt-14">
+    <section className="mt-14 overflow-x-hidden">
       <h2 className="text-3xl font-bold mb-5">{title}</h2>
 
       <motion.div
