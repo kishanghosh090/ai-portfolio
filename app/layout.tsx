@@ -23,7 +23,7 @@ export default function RootLayout({
         <SmoothScroll />
         <div className="min-h-screen flex flex-col overflow-x-hidden ">
           <TopNav />
-          <SiriFluid active={true} />
+          {/* <SiriFluid active={true} /> */}
           <main className="flex-1">{children}</main>
           <BottomNav />
           <Footer />
