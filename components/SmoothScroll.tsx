@@ -1,26 +1,26 @@
 "use client";
 
-import Lenis from "@studio-freight/lenis";
+import Scrollbar from "smooth-scrollbar";
+import OverscrollPlugin from "smooth-scrollbar/plugins/overscroll";
 import { useEffect } from "react";
 
-export default function SmoothScroll() {
+export default function MobileSmoothScroll() {
   useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.2,   // smooth speed
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
+    if (typeof window === "undefined") return;
+
+    Scrollbar.use(OverscrollPlugin);
+
+    const container = document.querySelector("#scroll-container");
+
+    const scrollbar = Scrollbar.init(container as HTMLElement, {
+      damping: 0.08,
+      continuousScrolling: true,
+      plugins: {
+        overscroll: { effect: "glow", damping: 0.15 },
+      },
     });
 
-    function raf(time: number) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-
-    requestAnimationFrame(raf);
-
-    return () => {
-      lenis.destroy();
-    };
+    return () => scrollbar.destroy();
   }, []);
 
   return null;

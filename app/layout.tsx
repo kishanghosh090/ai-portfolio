@@ -18,10 +18,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className="bg-[#050509] text-zinc-100 overflow-x-hidden">
+      <body className="bg-[#050509] text-zinc-100 overflow-hidden">
         <SmoothScroll />
 
-        <div className="min-h-screen flex flex-col overflow-x-hidden ">
+        <div id="scroll-container"  className="min-h-screen flex flex-col overflow-x-hidden ">
           <MobileSmoothScroll />
           {/* <Navbar /> */}
           <TopNav />
