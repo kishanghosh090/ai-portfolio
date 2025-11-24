@@ -19,7 +19,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className="bg-[#050509] text-zinc-100 overflow-x-hidden">
         <SmoothScroll />
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col overflow-x-hidden ">
           {/* <Navbar /> */}
           <TopNav />
           {/* <div className="pointer-events-none absolute -inset-24 bg-[radial-gradient(circle_at_top,_rgba(139,92,246,0.35),transparent_55%),radial-gradient(circle_at_bottom,_rgba(56,189,248,0.25),transparent_55%)] opacity-80" /> */}

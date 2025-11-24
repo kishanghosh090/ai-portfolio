@@ -7,7 +7,7 @@ import ProjectCategory from "@/components/ProjectCategory";
 
 export default function Home() {
   return (
-    <div className="overflow-x-hidden">
+    <div className="px-6 py-10 max-w-6xl mx-auto">
       <Hero />
 
       <Section id="about" title="About me" eyebrow="Intro">
