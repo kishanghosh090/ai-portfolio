@@ -9,21 +9,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
 
-    const apiKey = "AIzaSyA_IkCzCYEj3-8YkcITFy18fmA5kVJqbx4";
+    const apiKey = process.env.OPENAI_API_KEY;
+
     if (!apiKey) {
       return NextResponse.json(
-        { error: "Server missing API key (set GEMINI_API_KEY)" },
+        { error: "Missing Gemini API key" },
         { status: 500 }
       );
     }
 
     const openai = new OpenAI({
-      apiKey: apiKey,
+      apiKey,
       baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     });
 
-    // Use the chat completions endpoint. The exact options may vary by package
-    // version; this mirrors previous code used in the project.
     const response = await openai.chat.completions.create({
       model: "gemini-2.0-flash",
       response_format: { type: "json_object" },
@@ -33,34 +32,42 @@ export async function POST(req: Request) {
       ],
     });
 
-    const choice = response.choices?.[0];
-    let parsed: any = choice?.message?.content;
-    console.log(parsed);
+    const raw = response.choices?.[0]?.message?.content ?? "";
 
-    // if (!parsed) {
-    //   const raw = String(choice?.message?.content ?? "");
-    //   try {
-    //     parsed = JSON.parse(raw);
-    //   } catch (e) {
-    //     parsed = { type: "answer", text: raw };
-    //   }
-    // }
+    let parsed: any;
 
-    // // Basic validation/shape enforcement
-    // if (parsed?.type === "navigate" && typeof parsed.route === "string") {
-    //   return NextResponse.json({ type: "navigate", route: parsed.route });
-    // }
+    // 🛠 SAFE JSON PARSE
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      // If Gemini fails, fallback to basic response
+      parsed = { type: "answer", text: raw };
+    }
 
-    // if (parsed?.type === "answer" && typeof parsed.text === "string") {
-    //   return NextResponse.json({ type: "answer", text: parsed.text });
-    // }
+    // 🛡 validate structure
+    if (parsed?.type === "navigate" && typeof parsed.route === "string") {
+      return NextResponse.json({
+        type: "navigate",
+        route: parsed.route,
+      });
+    }
 
-    // fallback
-    return NextResponse.json(parsed);
+    if (parsed?.type === "answer" && typeof parsed.text === "string") {
+      return NextResponse.json({
+        type: "answer",
+        text: parsed.text,
+      });
+    }
+
+    // fallback generic text
+    return NextResponse.json({
+      type: "answer",
+      text: typeof raw === "string" ? raw : JSON.stringify(raw),
+    });
   } catch (err: any) {
-    console.error("/api/ask error", err);
+    console.error("/api/ask error:", err);
     return NextResponse.json(
-      { error: String(err?.message ?? err) },
+      { error: err?.message ?? "Unknown server error" },
       { status: 500 }
     );
   }
