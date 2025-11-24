@@ -35,27 +35,29 @@ export async function POST(req: Request) {
 
     const choice = response.choices?.[0];
     let parsed: any = choice?.message?.content;
+    console.log(parsed);
+    
 
-    if (!parsed) {
-      const raw = String(choice?.message?.content ?? "");
-      try {
-        parsed = JSON.parse(raw);
-      } catch (e) {
-        parsed = { type: "answer", text: raw };
-      }
-    }
+    // if (!parsed) {
+    //   const raw = String(choice?.message?.content ?? "");
+    //   try {
+    //     parsed = JSON.parse(raw);
+    //   } catch (e) {
+    //     parsed = { type: "answer", text: raw };
+    //   }
+    // }
 
-    // Basic validation/shape enforcement
-    if (parsed?.type === "navigate" && typeof parsed.route === "string") {
-      return NextResponse.json({ type: "navigate", route: parsed.route });
-    }
+    // // Basic validation/shape enforcement
+    // if (parsed?.type === "navigate" && typeof parsed.route === "string") {
+    //   return NextResponse.json({ type: "navigate", route: parsed.route });
+    // }
 
-    if (parsed?.type === "answer" && typeof parsed.text === "string") {
-      return NextResponse.json({ type: "answer", text: parsed.text });
-    }
+    // if (parsed?.type === "answer" && typeof parsed.text === "string") {
+    //   return NextResponse.json({ type: "answer", text: parsed.text });
+    // }
 
     // fallback
-    return NextResponse.json({ type: "answer", text: String(parsed ?? "") });
+    return NextResponse.json(parsed);
   } catch (err: any) {
     console.error("/api/ask error", err);
     return NextResponse.json(

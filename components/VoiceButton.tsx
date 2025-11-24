@@ -123,16 +123,37 @@ export default function VoiceButton() {
       const transcript = event.results[0][0].transcript;
       console.log("User said:", transcript);
 
-      try {
-        const ai = await askGemini(transcript);
-        console.log("Gemini response:", ai);
+        try {
+        let aiRes = await askGemini(transcript);
+        // console.log("Gemini response:", typeof(ai));
+        // askGemini may return a parsed object or a JSON string depending on implementation,
+        // so handle both cases safely.
+        const ai = typeof aiRes === "string" ? JSON.parse(aiRes) : aiRes;
 
-        if (ai.type === "navigate") {
-          speakText("Opening " + ai.route.replace("/", ""));
-          router.push(ai.route);
+
+        // Safely handle navigate responses and textual responses using type guards
+        if (ai && typeof ai === "object") {
+          if (
+            "type" in ai &&
+            String((ai as any).type).toLowerCase() === "navigate" &&
+            "route" in ai &&
+            typeof (ai as any).route === "string"
+          ) {
+            const route = (ai as any).route.replace(/^\//, "");
+            speakText("Opening " + route);
+            router.push((ai as any).route);
+          } else if ("text" in ai && typeof (ai as any).text === "string") {
+            // Only access .text after checking it exists on the response
+            speakText((ai as any).text);
+            alert((ai as any).text);
+          } else {
+            // Fallback for unexpected shapes
+            const msg = typeof ai === "string" ? ai : JSON.stringify(ai);
+            speakText(msg);
+            alert(msg);
+          }
         } else {
-          speakText(ai.text);
-          alert(ai.text);
+          alert("Unexpected AI response.");
         }
       } catch (err) {
         console.error(err);
