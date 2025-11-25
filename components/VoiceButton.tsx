@@ -151,6 +151,8 @@ export default function VoiceButton() {
     recognition.onresult = (e: any) => {
       let text = "";
       for (let i = 0; i < e.results.length; i++) {
+        console.log(text);
+
         text += e.results[i][0].transcript + " ";
       }
       finalTranscript = text.trim();
@@ -214,7 +216,7 @@ export default function VoiceButton() {
   return (
     <div>
       <SiriMicButton
-        listening={listening}
+        listening={listening || isListening}
         onClick={() => {
           setErrorMsg(null);
 
