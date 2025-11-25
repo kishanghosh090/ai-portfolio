@@ -57,7 +57,11 @@ export default function VoiceButton() {
 
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      setText((prev) => prev + " " + transcript);
+      setText((prev) => {
+        console.log(prev);
+
+        return prev + " " + transcript;
+      });
     };
 
     recognition.onerror = (event: any) => {
