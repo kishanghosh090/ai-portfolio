@@ -2,24 +2,27 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { SYSTEM_PROMPT } from "@/lib/systemPrompt";
 
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
   try {
     const { query } = await req.json();
+    console.log(query);
+
     if (!query || typeof query !== "string") {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: "Missing Gemini API key" },
+        { error: "Missing Google Gemini API key (set GOOGLE_API_KEY)" },
         { status: 500 }
       );
     }
-
     const openai = new OpenAI({
-      apiKey,
+      apiKey: apiKey,
       baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     });
 
@@ -28,46 +31,28 @@ export async function POST(req: Request) {
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: query },
+        {
+          role: "user",
+          content: ` ${query}`,
+        },
       ],
     });
 
-    const raw = response.choices?.[0]?.message?.content ?? "";
+    console.log(response.choices[0].message.content);
+    const responseText = response.choices[0].message.content;
 
-    let parsed: any;
-
-    // 🛠 SAFE JSON PARSE
     try {
-      parsed = JSON.parse(raw);
-    } catch {
-      // If Gemini fails, fallback to basic response
-      parsed = { type: "answer", text: raw };
-    }
-
-    // 🛡 validate structure
-    if (parsed?.type === "navigate" && typeof parsed.route === "string") {
-      return NextResponse.json({
-        type: "navigate",
-        route: parsed.route,
-      });
-    }
-
-    if (parsed?.type === "answer" && typeof parsed.text === "string") {
+      return NextResponse.json(responseText);
+    } catch (e) {
       return NextResponse.json({
         type: "answer",
-        text: parsed.text,
+        text: responseText,
       });
     }
-
-    // fallback generic text
-    return NextResponse.json({
-      type: "answer",
-      text: typeof raw === "string" ? raw : JSON.stringify(raw),
-    });
-  } catch (err: any) {
-    console.error("/api/ask error:", err);
+  } catch (err) {
+    console.error("API error:", err);
     return NextResponse.json(
-      { error: err?.message ?? "Unknown server error" },
+      { error: String((err as any)?.message ?? "Unknown error") },
       { status: 500 }
     );
   }

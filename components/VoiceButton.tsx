@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { askGemini } from "@/lib/gemini";
 import SiriMicButton from "./SiriMicButton";
@@ -18,7 +18,81 @@ export default function VoiceButton() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
   const router = useRouter();
+  const [text, setText] = useState("");
+  const [isListening, setIsListening] = useState(false);
 
+  const [isAndroid, setIsAndroid] = useState(false);
+
+  //on android
+
+  // Detect Android
+  useEffect(() => {
+    // Detect Android
+    setIsAndroid(/Android/i.test(navigator.userAgent));
+
+    // Detect speech support
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+    }
+  }, []);
+
+  const startListening = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    setIsListening(true);
+
+    recognition.start();
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setText((prev) => prev + " " + transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      alert("Error: " + event.error);
+    };
+
+    recognition.onend = async () => {
+      setListening(false);
+
+      if (!text) {
+        setErrorMsg("No speech detected.");
+        return;
+      }
+
+      // SEND TO GEMINI
+      try {
+        const ai = await askGemini(text);
+        if (ai == undefined) return;
+
+        if (ai["type"] === "navigate") {
+          speak(`opening ${ai["route"].replace("/", "")}`);
+          router.push(ai["route"]);
+        } else {
+          speak(`${ai["text"]}`);
+
+          // alert(ai["text"]);
+        }
+      } catch {
+        alert("AI error. Try again.");
+      }
+    };
+  };
+
+  /// desktop
   const startSpeech = async () => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -48,8 +122,8 @@ export default function VoiceButton() {
     recognitionRef.current = recognition;
 
     recognition.lang = "en-IN";
-    recognition.continuous = true;          // ANDROID-FRIENDLY
-    recognition.interimResults = true;      // ANDROID-FRIENDLY
+    recognition.continuous = true; // ANDROID-FRIENDLY
+    recognition.interimResults = true; // ANDROID-FRIENDLY
 
     let finalTranscript = "";
 
@@ -93,11 +167,15 @@ export default function VoiceButton() {
       // SEND TO GEMINI
       try {
         const ai = await askGemini(finalTranscript);
+        if (ai == undefined) return;
 
-        if (ai.type === "navigate") {
-          router.push(ai.route);
+        if (ai["type"] === "navigate") {
+          speak(`opening ${ai["route"].replace("/", "")}`);
+          router.push(ai["route"]);
         } else {
-          alert(ai.text);
+          speak(`${ai["text"]}`);
+
+          // alert(ai["text"]);
         }
       } catch {
         alert("AI error. Try again.");
@@ -113,6 +191,25 @@ export default function VoiceButton() {
       } catch {}
     }, 5000);
   };
+  function speak(text: string) {
+    if (!text) return;
+
+    window.speechSynthesis.cancel();
+
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "en-US";
+    utter.pitch = 1;
+    utter.rate = 1;
+    utter.volume = 1;
+
+    const voices = window.speechSynthesis.getVoices();
+    const englishVoices = voices.filter((v) => v.lang.startsWith("en"));
+    if (englishVoices.length > 0) {
+      utter.voice = englishVoices[0];
+    }
+
+    window.speechSynthesis.speak(utter);
+  }
 
   return (
     <div>
@@ -120,17 +217,20 @@ export default function VoiceButton() {
         listening={listening}
         onClick={() => {
           setErrorMsg(null);
-          startSpeech();
+
+          if (isAndroid) {
+            startListening();
+          } else {
+            console.log("lapotp");
+
+            startSpeech();
+          }
         }}
       />
 
       {listening && <SiriFluid active={listening} />}
 
-      {errorMsg && (
-        <div className="text-red-500 mt-2 text-sm">
-          {errorMsg}
-        </div>
-      )}
+      {errorMsg && <div className="text-red-500 mt-2 text-sm">{errorMsg}</div>}
     </div>
   );
 }
