@@ -49,19 +49,17 @@ export default function VoiceButton() {
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
 
     setIsListening(true);
+
+    let finalText = ""; // <--- FIX: local variable
 
     recognition.start();
 
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      setText((prev) => {
-        console.log(prev);
-
-        return prev + " " + transcript;
-      });
+      finalText = transcript; // <--- FIX HERE
+      console.log("Android transcript:", finalText);
     };
 
     recognition.onerror = (event: any) => {
@@ -70,27 +68,27 @@ export default function VoiceButton() {
     };
 
     recognition.onend = async () => {
-      setListening(false);
+      setIsListening(false);
 
-      if (!text) {
+      if (!finalText.trim()) {
+        // <--- FIX
         setErrorMsg("No speech detected.");
         return;
       }
 
-      // SEND TO GEMINI
       try {
-        const ai = await askGemini(text);
-        if (ai == undefined) return;
+        const ai = await askGemini(finalText);
 
-        if (ai["type"] === "navigate") {
-          speak(`opening ${ai["route"].replace("/", "")}`);
-          router.push(ai["route"]);
+        if (!ai) return;
+
+        if (ai.type === "navigate") {
+          speak(`opening ${ai.route.replace("/", "")}`);
+          router.push(ai.route);
         } else {
-          speak(`${ai["text"]}`);
-
-          // alert(ai["text"]);
+          speak(ai.text);
         }
-      } catch {
+      } catch (e) {
+        console.log("AI Error:", e);
         alert("AI error. Try again.");
       }
     };
