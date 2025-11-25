@@ -13,7 +13,11 @@ declare global {
   }
 }
 
-export default function VoiceButton() {
+export default function VoiceButton({
+  setIsOpen,
+}: {
+  setIsOpen: (value: boolean) => void;
+}) {
   const [listening, setListening] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
@@ -27,6 +31,7 @@ export default function VoiceButton() {
 
   // Detect Android
   useEffect(() => {
+    setIsOpen(listening);
     // Detect Android
     setIsAndroid(/Android/i.test(navigator.userAgent));
 
@@ -51,6 +56,7 @@ export default function VoiceButton() {
     recognition.interimResults = false;
 
     setIsListening(true);
+    setIsOpen(true);
 
     let finalText = ""; // <--- FIX: local variable
 
@@ -69,7 +75,7 @@ export default function VoiceButton() {
 
     recognition.onend = async () => {
       setIsListening(false);
-
+    
       if (!finalText.trim()) {
         // <--- FIX
         setErrorMsg("No speech detected.");
@@ -91,6 +97,7 @@ export default function VoiceButton() {
         console.log("AI Error:", e);
         alert("AI error. Try again.");
       }
+      setIsOpen(false);
     };
   };
 
@@ -131,6 +138,8 @@ export default function VoiceButton() {
 
     recognition.onstart = () => {
       setListening(true);
+      setIsOpen(true);
+
       setErrorMsg(null);
     };
 
@@ -148,6 +157,7 @@ export default function VoiceButton() {
       }
 
       setListening(false);
+      setIsOpen(false);
     };
 
     recognition.onresult = (e: any) => {
@@ -183,7 +193,9 @@ export default function VoiceButton() {
         }
       } catch {
         alert("AI error. Try again.");
+        setIsOpen(false);
       }
+      setIsOpen(false);
     };
 
     recognition.start();

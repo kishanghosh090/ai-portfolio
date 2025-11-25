@@ -4,11 +4,13 @@ import TimelineItem from "@/components/TimelineItem";
 import { timeline } from "@/lib/timeline";
 import { projects } from "@/data/projects";
 import ProjectCategory from "@/components/ProjectCategory";
+import SiriFluid from "@/components/SiriFluid";
 
 export default function Home() {
   return (
     <div className="px-6 py-10 max-w-6xl mx-auto">
       <Hero />
+      {/* <SiriFluid active={true} /> */}
 
       <Section id="about" title="About me" eyebrow="Intro">
         <p className="text-sm md:text-base text-zinc-300 leading-relaxed max-w-3xl">
